@@ -1,6 +1,8 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
+// Tambahkan rute '/' ke dalam daftar rute publik
 const isPublicRoute = createRouteMatcher([
+  '/',                  // <--- Halaman utama sekarang publik
   '/sign-in(.*)',
   '/sign-up(.*)',
 ])

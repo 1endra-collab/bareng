@@ -13,6 +13,8 @@ model User {
   email        String         @unique
   name         String?
 
+  role         String         @default("user")
+
   peminjaman   Peminjaman[]
 
   createdAt    DateTime       @default(now())
@@ -36,7 +38,12 @@ model Peminjaman {
 
   status      String   @default("pending")
 
+  note        String?
+
+  dueAt       DateTime?
+
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt  // ← tambah ini
 }
 
 model Device {

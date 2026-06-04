@@ -10,11 +10,12 @@ import {
   Shield,
   LogOut,
   Monitor,
+  ShieldCheck, 
 } from "lucide-react";
 
 import { SignOutButton } from "@clerk/nextjs";
 
-const menus = [
+const userMenus = [
   {
     name: "Dashboard",
     href: "/dashboard",
@@ -36,17 +37,39 @@ const menus = [
     icon: Shield,
   },
   {
-  name: "Device",
-  href: "/device",
-  icon: Monitor,
-},
+    name: "Device",
+    href: "/device",
+    icon: Monitor,
+  },
 ];
 
-export default function Sidebar() {
+const adminMenus = [
+  {
+    name: "Approval",
+    href: "/approval",
+    icon: ShieldCheck,
+  },
+    {
+    name: "Riwayat Semua",
+    href: "/riwayat-admin",
+    icon: History,
+  },
+];
+
+export default function Sidebar({
+  role,
+}: {
+  role: string;
+}) {
   const pathname = usePathname();
 
+  const menus =
+    role === "admin"
+      ? [...userMenus, ...adminMenus]
+      : userMenus;
+
   return (
-    <aside className="w-65 border-r bg-white p-4"> 
+    <aside className="w-65 border-r bg-white p-4">
       <div className="mb-8">
         <h1 className="text-xl font-bold">
           Device & Lab-Kom

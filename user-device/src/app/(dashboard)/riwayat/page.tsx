@@ -21,6 +21,10 @@ export default async function RiwayatPage() {
         userId: user?.id,
       },
 
+      include: {
+        device: true,
+      },
+
       orderBy: {
         createdAt: "desc",
       },
@@ -44,7 +48,7 @@ export default async function RiwayatPage() {
               className="rounded-xl border bg-white p-4"
             >
               <h2 className="text-xl font-semibold">
-                {item.deviceName}
+                {item.device.name}
               </h2>
 
               <p className="text-gray-500">
@@ -62,6 +66,8 @@ export default async function RiwayatPage() {
                   Jam:
                   {" "}
                   {item.borrowTime}
+                  {" - "}
+                  {item.returnTime}
                 </p>
 
                 <p>
@@ -84,7 +90,6 @@ export default async function RiwayatPage() {
               </div>
 
               <div className="mt-4 flex gap-3">
-                {/* EDIT */}
                 <Link
                   href={`/riwayat/${item.id}`}
                   className="rounded-lg bg-yellow-500 px-4 py-2 text-white"
@@ -92,7 +97,6 @@ export default async function RiwayatPage() {
                   Edit
                 </Link>
 
-                {/* DELETE */}
                 <form
                   action={async () => {
                     "use server";

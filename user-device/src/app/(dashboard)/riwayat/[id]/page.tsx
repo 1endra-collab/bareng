@@ -66,12 +66,33 @@ export default async function EditPage({
           className="w-full rounded-lg border p-3"
         />
 
-        <input
-          type="time"
-          name="borrowTime"
-          defaultValue={data.borrowTime}
-          className="w-full rounded-lg border p-3"
-        />
+        <div className="grid grid-cols-2 gap-4">
+  <div>
+    <label className="mb-1 block text-sm font-medium">
+      Jam Mulai
+    </label>
+
+    <input
+      type="time"
+      name="borrowTime"
+      defaultValue={data.borrowTime}
+      className="w-full rounded-lg border p-3"
+    />
+  </div>
+
+  <div>
+    <label className="mb-1 block text-sm font-medium">
+      Jam Selesai
+    </label>
+
+    <input
+      type="time"
+      name="returnTime"
+      defaultValue={data.returnTime || ""}
+      className="w-full rounded-lg border p-3"
+    />
+  </div>
+</div>
 
         <button className="rounded-lg bg-blue-500 px-5 py-3 text-white">
           Update

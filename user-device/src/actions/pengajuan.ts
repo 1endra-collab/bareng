@@ -67,9 +67,10 @@ export async function createPeminjaman(
       ),
 
       borrowTime:
-        formData.get(
-          "borrowTime"
-        ) as string,
+  formData.get("borrowTime") as string,
+
+returnTime:
+  formData.get("returnTime") as string,
     },
   });
 

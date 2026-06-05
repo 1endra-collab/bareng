@@ -10,7 +10,8 @@ import {
   Shield,
   LogOut,
   Monitor,
-  ShieldCheck, 
+  ShieldCheck,
+  NotebookPen,
 } from "lucide-react";
 
 import { SignOutButton } from "@clerk/nextjs";
@@ -29,7 +30,7 @@ const userMenus = [
   {
     name: "status Peminjaman",
     href: "/riwayat",
-    icon: History,
+    icon: NotebookPen,
   },
   {
     name: "Peraturan",

@@ -27,7 +27,7 @@ const userMenus = [
     icon: ClipboardList,
   },
   {
-    name: "Riwayat Peminjaman",
+    name: "status Peminjaman",
     href: "/riwayat",
     icon: History,
   },
@@ -41,6 +41,11 @@ const userMenus = [
     href: "/device",
     icon: Monitor,
   },
+      {
+    name: "Riwayat Semua",
+    href: "/riwayat-admin",
+    icon: History,
+  },
 ];
 
 const adminMenus = [
@@ -49,11 +54,7 @@ const adminMenus = [
     href: "/approval",
     icon: ShieldCheck,
   },
-    {
-    name: "Riwayat Semua",
-    href: "/riwayat-admin",
-    icon: History,
-  },
+
 ];
 
 export default function Sidebar({

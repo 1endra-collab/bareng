@@ -139,3 +139,36 @@ export async function deletePeminjaman(id: string) {
 
   redirect("/riwayat");
 }
+export async function kembalikanPerangkatAwal(peminjamanId: string) {
+  // 1. Cari data peminjamannya terlebih dahulu
+  const peminjaman = await prisma.peminjaman.findUnique({
+    where: { id: peminjamanId },
+    select: { deviceId: true, status: true }
+  });
+
+  if (!peminjaman) {
+    throw new Error("Data peminjaman tidak ditemukan.");
+  }
+
+  // Amankan agar hanya peminjaman yang berstatus 'approved' yang bisa dikembalikan
+  if (peminjaman.status !== "approved") {
+    throw new Error("Perangkat tidak dalam status sedang dipinjam.");
+  }
+
+  // 2. Jalankan transaksi database untuk mereset status secara aman
+  await prisma.$transaction([
+    // Ubah status peminjaman jadi returned
+    prisma.peminjaman.update({
+      where: { id: peminjamanId },
+      data: { status: "returned" }
+    }),
+    // Buka kembali ketersediaan device agar bisa dipinjam user lain
+    prisma.device.update({
+      where: { id: peminjaman.deviceId },
+      data: { isAvailable: true }
+    })
+  ]);
+
+  // Segarkan halaman agar status terbaru langsung terlihat di browser user
+  redirect("/riwayat");
+}

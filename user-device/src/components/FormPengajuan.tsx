@@ -1,20 +1,60 @@
 "use client";
 
-import { useTransition } from "react";
+import { useTransition, useState } from "react";
 import { Device } from "@prisma/client";
-import { createPeminjaman } from "@/actions/pengajuan";
+// DI SINI SUDAH DIPERBAIKI: Menggunakan jalur relatif mundur 1 folder untuk masuk ke actions
+import { createPeminjaman } from "../actions/pengajuan";
 
 export default function FormPengajuan({ devices }: { devices: Device[] }) {
   const [isPending, startTransition] = useTransition();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // TRIK JITU: Hitung langsung di sini tanpa useEffect agar extension tidak protes
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  const todayDate = `${year}-${month}-${day}`;
 
   const handleSubmit = (formData: FormData) => {
+    setErrorMessage(null);
+
+    const borrowTime = formData.get("borrowTime") as string;
+    const returnTime = formData.get("returnTime") as string;
+
+    // VALIDASI: Pastikan jam selesai tidak mendahului jam mulai
+    if (borrowTime && returnTime) {
+      if (returnTime <= borrowTime) {
+        setErrorMessage("Jam Selesai harus lebih lambat daripada Jam Mulai.");
+        return;
+      }
+    }
+
     startTransition(async () => {
-      await createPeminjaman(formData);
+      try {
+        await createPeminjaman(formData);
+      } catch (error: unknown) {
+        // VALIDASI TIPE DATA: Ubah unknown menjadi objek Error yang valid agar ESLint senang
+        if (error instanceof Error) {
+          setErrorMessage(error.message);
+        } else {
+          setErrorMessage("Terjadi kesalahan sistem.");
+        }
+      }
     });
+
   };
 
   return (
     <form action={handleSubmit} className="space-y-4">
+      {/* TAMPILKAN PESAN ERROR */}
+      {errorMessage && (
+        <div className="rounded-lg bg-red-50 p-3 text-sm font-medium text-red-600 border border-red-200">
+          ⚠️ {errorMessage}
+        </div>
+      )}
+
+      {/* PILIH DEVICE */}
       <div className="relative">
         <select
           name="deviceId"
@@ -34,6 +74,7 @@ export default function FormPengajuan({ devices }: { devices: Device[] }) {
         </div>
       </div>
 
+      {/* TUJUAN PEMINJAMAN */}
       <textarea
         name="purpose"
         placeholder="Tujuan Peminjaman"
@@ -42,17 +83,23 @@ export default function FormPengajuan({ devices }: { devices: Device[] }) {
         disabled={isPending}
       />
 
-      <input
-        type="date"
-        name="borrowDate"
-        className="w-full rounded-lg border p-3 text-black disabled:bg-gray-100"
-        required
-        disabled={isPending}
-      />
+      {/* INPUT TANGGAL (Dibatasi minimal hari ini) */}
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">Tanggal Peminjaman</label>
+        <input
+          type="date"
+          name="borrowDate"
+          min={todayDate} // Mengunci tanggal agar user tidak bisa pilih hari kemarin
+          className="w-full rounded-lg border p-3 text-black disabled:bg-gray-100"
+          required
+          disabled={isPending}
+        />
+      </div>
 
+      {/* INPUT JAM */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="mb-1 block text-sm font-medium">Jam Mulai</label>
+          <label className="mb-1 block text-sm font-medium text-gray-700">Jam Mulai</label>
           <input
             type="time"
             name="borrowTime"
@@ -62,7 +109,7 @@ export default function FormPengajuan({ devices }: { devices: Device[] }) {
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium">Jam Selesai</label>
+          <label className="mb-1 block text-sm font-medium text-gray-700">Jam Selesai</label>
           <input
             type="time"
             name="returnTime"

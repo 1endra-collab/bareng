@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
-import { deletePeminjaman } from "@/actions/pengajuan";
+import TombolKembalikan from "@/components/TombolKembalikan";
+import TombolDeletePeminjaman from "@/components/TombolDeletePeminjaman";
 
 export default async function RiwayatPage() {
   const { userId } = await auth();
@@ -17,8 +18,8 @@ export default async function RiwayatPage() {
   });
 
   return (
-    <div>
-      <h1 className="mb-6 text-3xl font-bold">Riwayat Peminjaman</h1>
+    <div className="text-black">
+      <h1 className="mb-6 text-3xl font-bold">Status Peminjaman</h1>
 
       <div className="space-y-4">
         {peminjaman.length === 0 ? (
@@ -33,11 +34,13 @@ export default async function RiwayatPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="text-lg font-bold">{item.device.name}</h2>
-                  <p className="text-sm text-gray-500">{item.purpose}</p>
+                  <p className="text-sm text-gray-500 max-w-xl break-words">
+                    {item.purpose.length > 80 ? `${item.purpose.substring(0, 80)}...` : item.purpose}
+                  </p>
                 </div>
 
                 <span
-                  className={`rounded-full px-3 py-1 text-xs font-medium ${
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
                     item.status === "approved"
                       ? "bg-green-100 text-green-700"
                       : item.status === "rejected"
@@ -65,26 +68,25 @@ export default async function RiwayatPage() {
                 </div>
               )}
 
-              {/* Tombol — hanya tampil kalau masih pending */}
+              {/* AKSI 1: Fitur Pengembalian Dipercepat (Hanya tampil jika Status = approved) */}
+              {item.status === "approved" && (
+                <div className="mt-4 border-t pt-3">
+                  <TombolKembalikan id={item.id} />
+                </div>
+              )}
+
+              {/* AKSI 2: Tombol Edit & Delete (Hanya tampil jika Status = pending) */}
               {item.status === "pending" && (
-                <div className="mt-4 flex gap-3">
+                <div className="mt-4 flex gap-3 border-t pt-3">
                   <Link
                     href={`/riwayat/${item.id}`}
-                    className="rounded-lg bg-yellow-500 px-4 py-2 text-sm text-white"
+                    className="rounded-lg bg-yellow-500 hover:bg-yellow-600 px-4 py-2 text-sm text-white font-medium transition-colors"
                   >
                     Edit
                   </Link>
 
-                  <form
-                    action={async () => {
-                      "use server";
-                      await deletePeminjaman(item.id);
-                    }}
-                  >
-                    <button className="rounded-lg bg-red-500 px-4 py-2 text-sm text-white">
-                      Delete
-                    </button>
-                  </form>
+                  {/* Memanggil komponen tombol delete client anti spam klik */}
+                  <TombolDeletePeminjaman id={item.id} />
                 </div>
               )}
             </div>

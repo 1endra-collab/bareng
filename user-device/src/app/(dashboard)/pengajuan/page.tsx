@@ -1,10 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { Device } from "@prisma/client";
-
-
-import { createPeminjaman } from "@/actions/pengajuan";
+import FormPengajuan from "@/components/FormPengajuan";
 
 export default async function PengajuanPage() {
+  // Ambil data device langsung dari database di server side
   const devices = await prisma.device.findMany({
     where: {
       isAvailable: true,
@@ -17,81 +15,8 @@ export default async function PengajuanPage() {
         Ajukan Peminjaman
       </h1>
 
-      <form
-        action={createPeminjaman}
-        className="space-y-4"
-      >
-<div className="relative">
-  <select
-    name="deviceId"
-    className="w-full appearance-none rounded-lg border p-3 pr-12"
-    required
-  >
-    <option value="">
-      Pilih Device
-    </option>
-
-    {devices.map((device: Device) => (
-      <option
-        key={device.id}
-        value={device.id}
-      >
-        {device.name}
-      </option>
-    ))}
-  </select>
-
-  <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2">
-    ▼
-  </div>
-</div>
-
-        <textarea
-          name="purpose"
-          placeholder="Tujuan Peminjaman"
-          className="w-full rounded-lg border p-3"
-          required
-        />
-
-        <input
-          type="date"
-          name="borrowDate"
-          className="w-full rounded-lg border p-3"
-          required
-        />
-
-        <div className="grid grid-cols-2 gap-4">
-  <div>
-    <label className="mb-1 block text-sm font-medium">
-      Jam Mulai
-    </label>
-
-    <input
-      type="time"
-      name="borrowTime"
-      className="w-full rounded-lg border p-3"
-      required
-    />
-  </div>
-
-  <div>
-    <label className="mb-1 block text-sm font-medium">
-      Jam Selesai
-    </label>
-
-    <input
-      type="time"
-      name="returnTime"
-      className="w-full rounded-lg border p-3"
-      required
-    />
-  </div>
-</div>
-
-        <button className="rounded-lg bg-blue-500 px-5 py-3 text-white">
-          Ajukan
-        </button>
-      </form>
+      {/* Memanggil client component form dan mengoper data devices */}
+      <FormPengajuan devices={devices} />
     </div>
   );
 }

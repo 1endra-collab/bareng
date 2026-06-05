@@ -19,7 +19,7 @@ async function kirimNotifGoogleChat(deviceName: string, namaPeminjam: string, ta
           `• *Peminjam:* ${namaPeminjam}\n` +
           `• *Tanggal:* ${tanggal}\n` +
           `• *Jam:* ${jam}\n\n` +
-          `_Silakan cek dashboard admin menu Approval untuk memproses._`
+          `_Silakan cek website device menu Approval untuk memproses._`
   };
 
   try {
@@ -33,8 +33,8 @@ async function kirimNotifGoogleChat(deviceName: string, namaPeminjam: string, ta
     console.error("Gagal mengirim ke Google Chat:", error);
   }
 }
-// ======================================
 
+// === 1. FUNGSI BUAT PEMINJAMAN BARU ===
 export async function createPeminjaman(formData: FormData) {
   const { userId } = await auth();
   const clerkUser = await currentUser();
@@ -63,17 +63,14 @@ export async function createPeminjaman(formData: FormData) {
   const borrowTime = formData.get("borrowTime") as string;
   const returnTime = formData.get("returnTime") as string;
 
-  // Ambil nama device terlebih dahulu dari database untuk kebutuhan notifikasi
   const device = await prisma.device.findUnique({
     where: { id: deviceId },
     select: { name: true }
   });
   const nameDevice = device ? device.name : "Device Tidak Diketahui";
-
-  // hitung dueAt dari tanggal + jam selesai
   const dueAt = new Date(`${borrowDate}T${returnTime}:00`);
 
-  // 1. Simpan ke Database
+  // Simpan ke Database
   await prisma.peminjaman.create({
     data: {
       userId: user.id,
@@ -86,22 +83,23 @@ export async function createPeminjaman(formData: FormData) {
     },
   });
 
-  // 2. PANGGIL NOTIFIKASI GOOGLE CHAT DI SINI (Sebelum redirect)
-  await kirimNotifGoogleChat(
+  // Kirim notifikasi di background (tanpa await agar aplikasi cepat)
+  kirimNotifGoogleChat(
     nameDevice, 
     user.name || clerkUser.emailAddresses[0].emailAddress, 
     borrowDate, 
     `${borrowTime} - ${returnTime}`
-  );
+  ).catch((err) => console.error("Background notify error:", err));
 
   redirect("/riwayat");
 }
 
+// === 2. FUNGSI UPDATE / EDIT PEMINJAMAN ===
 export async function updatePeminjaman(id: string, formData: FormData) {
   const borrowDate = formData.get("borrowDate") as string;
   const returnTime = formData.get("returnTime") as string;
 
-  // update dueAt juga kalau edit
+  // Hitung ulang batas waktu peminjaman jika waktu pengembalian diubah
   const dueAt = returnTime
     ? new Date(`${borrowDate}T${returnTime}:00`)
     : undefined;
@@ -120,6 +118,7 @@ export async function updatePeminjaman(id: string, formData: FormData) {
   redirect("/riwayat");
 }
 
+// === 3. FUNGSI HAPUS PEMINJAMAN ===
 export async function deletePeminjaman(id: string) {
   const peminjaman = await prisma.peminjaman.findUnique({
     where: { id },
@@ -127,11 +126,13 @@ export async function deletePeminjaman(id: string) {
 
   if (!peminjaman) return;
 
+  // Kembalikan status ketersediaan alat menjadi bisa dipinjam lagi
   await prisma.device.update({
     where: { id: peminjaman.deviceId },
     data: { isAvailable: true },
   });
 
+  // Hapus baris data dari tabel database
   await prisma.peminjaman.delete({
     where: { id },
   });

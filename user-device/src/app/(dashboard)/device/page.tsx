@@ -1,52 +1,33 @@
+import { AddDeviceModal } from "@/components/AddDeviceModal";
+import { EditDeviceModal } from "@/components/EditDeviceModal"; 
 import { prisma } from "@/lib/prisma";
 import { Device } from "@prisma/client";
-import { EditDeviceModal } from "@/components/EditDeviceModal"; 
-import { AddDeviceModal } from "@/components/AddDeviceModal";
-import { cookies } from "next/headers";
-
-// Fungsi aman untuk mengambil data user langsung dari tabel User bawaan proyekmu
-async function getSessionUser() {
-  try {
-    const cookieStore = await cookies();
-    
-    // Ambil token login (biasanya berisi user ID atau data login)
-    // Coba deteksi nama cookie kamu: "session", "token", "auth", atau "user"
-    const sessionToken = cookieStore.get("session")?.value || cookieStore.get("token")?.value;
-
-    if (!sessionToken) return null;
-
-    // --- CARA 1: Jika isi cookie kamu adalah ID User langsung ---
-    const userById = await prisma.user.findUnique({
-      where: { id: sessionToken },
-    });
-    if (userById) return userById;
-
-    // --- CARA 2: Jika isi cookie kamu adalah Email User ---
-    const userByEmail = await prisma.user.findUnique({
-      where: { email: sessionToken },
-    });
-    if (userByEmail) return userByEmail;
-
-    return null;
-  } catch (error) {
-    console.error("Gagal memuat data user:", error);
-    return null;
-  }
-}
+import { auth } from "@clerk/nextjs/server";
 
 export default async function DevicePage() {
-  // 1. Ambil data devices dari database
+  // 1. Ambil data dari database perangkat
   const devices = await prisma.device.findMany({
     orderBy: {
       createdAt: "desc",
     },
   });
 
-  // 2. Ambil data user aktif
-  const user = await getSessionUser();
-  
-  // Ambil role user (pastikan di database tulisan role kamu adalah "ADMIN" huruf besar)
-  const isAdmin = user?.role === "ADMIN" || user?.role === "admin"; 
+  // 2. Ambil userId Clerk dari orang yang sedang membuka browser saat ini
+  const { userId } = await auth();
+
+  let isAdmin = false;
+
+  // 3. Cari user tersebut di dalam database lokal berdasarkan kolom 'clerkId'
+  if (userId) {
+    const dbUser = await prisma.user.findUnique({
+      where: { clerkId: userId }, // Menyamakan userId Clerk dengan kolom clerkId di db kamu
+    });
+
+    // Jika user ditemukan dan nilai kolom role-nya adalah "admin"
+    if (dbUser && dbUser.role === "admin") {
+      isAdmin = true;
+    }
+  }
 
   return (
     <div className="p-1">
@@ -54,7 +35,7 @@ export default async function DevicePage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Device</h1>
         
-        {/* Tombol Tambah otomatis tersembunyi bagi user biasa */}
+        {/* Tombol Tambah hanya muncul jika terverifikasi admin dari DB */}
         {isAdmin && <AddDeviceModal />}
       </div>
 
@@ -93,7 +74,7 @@ export default async function DevicePage() {
                     )}
                   </div>
 
-                  {/* Tombol Edit otomatis tersembunyi jika bukan Admin */}
+                  {/* Tombol Edit hanya muncul jika terverifikasi admin dari DB */}
                   {isAdmin && (
                     <EditDeviceModal 
                       device={{

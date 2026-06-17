@@ -4,7 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
 // === 1. FUNGSI UNTUK MENYETUJUI (APPROVE) ===
-export async function approvePeminjaman(id: string) {
+export async function approvePeminjaman(
+  id: string,
+  note: string
+) {
   const peminjamanAktif = await prisma.peminjaman.findUnique({
     where: { id },
     select: { deviceId: true, status: true },
@@ -27,11 +30,14 @@ export async function approvePeminjaman(id: string) {
     throw new Error("Gagal menyetujui. Perangkat sudah dipinjam oleh orang lain duluan!");
   }
 
-  await prisma.$transaction([
-    prisma.peminjaman.update({
-      where: { id },
-      data: { status: "approved" },
-    }),
+await prisma.$transaction([
+  prisma.peminjaman.update({
+    where: { id },
+    data: {
+      status: "approved",
+      note: note || "Disetujui oleh Admin.",
+    },
+  }),
     prisma.device.update({
       where: { id: peminjamanAktif.deviceId },
       data: { isAvailable: false },

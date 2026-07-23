@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id      String @id @default(cuid())
+  clerkId String @unique
+  email   String @unique
+  name    String?
+
+  role    String @default("admin")
+
+  createdAt DateTime @default(now())
+}
+
+model Device {
+  id     String  @id @default(cuid())
+
+  name   String
+  type   String
+  merk   String?
+  kelas  String?
+  lokasi String?
+  image  String?
+
+  isAvailable Boolean @default(true)
+
+  peminjaman  Peminjaman[]
+
+  createdAt DateTime @default(now())
+}
+
+model Lab {
+  id            String @id @default(cuid())
+  nama          String
+  totalKomputer Int
+
+  komputer ComputerSlot[]
+
+  createdAt DateTime @default(now())
+}
+
+model ComputerSlot {
+  id     String @id @default(cuid())
+  nomor  Int
+  status String @default("tersedia") // tersedia | dipinjam | rusak
+
+  lab   Lab    @relation(fields: [labId], references: [id], onDelete: Cascade)
+  labId String
+
+  peminjaman Peminjaman[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([labId, nomor])
+}
+
+model Peminjaman {
+  id String @id @default(cuid())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  namaPeminjam  String
+  kelasPeminjam String
+
+  deviceId String?
+  device   Device? @relation(fields: [deviceId], references: [id])
+
+  komputerId String?
+  komputer   ComputerSlot? @relation(fields: [komputerId], references: [id])
+
+  purpose String?
+
+  borrowDate DateTime
+  returnDate DateTime
+
+  borrowTime String?
+  returnTime String?
+
+  status String @default("pending")
+
+  note  String?
+  dueAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}

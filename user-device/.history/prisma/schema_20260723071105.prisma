@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String         @id @default(cuid())
+  clerkId      String         @unique
+  email        String         @unique
+  name         String?
+
+  role         String         @default("user")
+
+  peminjaman   Peminjaman[]
+
+  createdAt    DateTime       @default(now())
+}
+
+model Peminjaman {
+  id          String   @id @default(cuid())
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+
+  deviceId    String
+  device      Device   @relation(fields: [deviceId], references: [id])
+
+  purpose     String
+
+  borrowDate  DateTime
+
+  borrowTime  String
+  returnTime  String?
+
+  status      String   @default("pending")
+
+  note        String?
+
+  dueAt       DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt  // ← tambah ini
+}
+
+model Device {
+  id            String         @id @default(cuid())
+
+  name          String
+  type          String
+
+  isAvailable   Boolean        @default(true)
+
+  peminjaman    Peminjaman[]
+
+  createdAt     DateTime       @default(now())
+}
